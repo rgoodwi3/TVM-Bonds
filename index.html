@@ -449,6 +449,8 @@ table.ptab{width:100%;border-collapse:collapse;margin-top:8px}
 <!-- Graded mode only: sign-in and server grading. Practice mode works without it. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js" integrity="sha384-rwykjmWNwVxboyFmvK9OXN0wj9hnMHA2aAHtits54DuACyCq0M2PrSNxhRb+hvXT" crossorigin="anonymous" defer></script>
 
+<!-- Activity signals for graded attempts (typing, pasting, time away, automation); see interacctive/integrity.js -->
+<script src="/interacctive/integrity.js"></script>
 </head>
 <body>
 
@@ -1018,7 +1020,7 @@ async function submitGraded(s){
   const answer=s.type==="entry"?{rows:F.rows.map(r=>({a:r.a,dr:r.dr,cr:r.cr}))}:{vals:Object.assign({},F.vals),cpt};
   F.warn=null; BUSY=true; markBusy("check","Submitting…");
   try{
-    const r=await api({action:"submit-step",attempt_id:GS.id,step:i,answer});
+    const r=await api({action:"submit-step",attempt_id:GS.id,step:i,answer,signals:window.IACSignals?IACSignals.take():null});
     if(!graded()||k!==i)return;
     F.tries++; F.fb=r.feedback; GS.done[i]=true; GS.pts[i]=r.points;
     if(r.next&&STEPS[i+1]&&STEPS[i+1].locked)STEPS[i+1]=r.next; // the server sends each step's text when it is reached
@@ -1075,7 +1077,8 @@ function rulesHTML(){
     '<li><b>No going back.</b> You can\'t return to earlier steps or start over during the attempt.</li>'+
     '<li><b>Saved to your account.</b> You get a new problem set, graded and saved on the server as you go. You can leave and come back, even on another device, but the clock keeps running.</li>'+
     '<li><b>Your score goes to your class.</b> When you finish, your score and finish time are recorded for your instructor. There is nothing to copy or paste.</li>'+
-    '<li><b>Work on your own.</b> Getting help from another person or an AI tool, or sharing your answers, is academic dishonesty. Every attempt has its own numbers.</li></ul>';
+    '<li><b>Work on your own.</b> Getting help from another person or an AI tool, or sharing your answers, is academic dishonesty. Every attempt has its own numbers.</li>'+
+    '<li><b>How you answer is recorded.</b> Along with your answers and times, the lab notes how they were entered (typing, pasting, leaving this page, and signs of AI or automation tools) for your instructor to review. It never records what you type anywhere else.</li></ul>';
 }
 function signInHTML(){
   if(DLG.stage==="code")return '<div class="signin"><p style="margin:0">We sent a sign-in email to <b>'+esc(DLG.email)+'</b>. Enter the code from the email here.</p>'+
@@ -1155,6 +1158,7 @@ $("gDlgB").addEventListener("click",e=>{
   if(g==="start"||g==="resume"){
     dlgRun(async()=>{
       const id=g==="resume"?GS.id:(await api({action:"start",course_id:COURSE,lab:LAB_SLUG})).attempt_id;
+      if(window.IACSignals)IACSignals.reset();
       await enterAttempt(id); closeGDlg();});
   }
 });
