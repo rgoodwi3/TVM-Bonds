@@ -1435,11 +1435,11 @@ function renderCalc(){
   if(graded()&&!GS.done[k])h+='<div class="gnote">Graded: only your first submission on this step counts. Each answer is worth 1 point ('+s.fields.length+' points). Fill in every answer before you submit.</div>';
   if(s.tl)h+=timelineSVG(s.tl);
   if(s.groups){
-    h+='<p class="note" style="margin-top:0">Enter the four values you know (0 for any key the problem doesn\'t use), leave the one you\'re solving for blank, and press <b>Calculate</b>. Then check your answers. Signs don\'t matter.</p>';
+    h+='<p class="note" style="margin-top:0">Enter the four values you know (0 for any key the problem doesn\'t use), leave the one you\'re solving for blank, and press <b>Calculate</b>. Then check your answers. Signs don\'t matter. <b>Round each dollar answer to the nearest whole dollar</b>, only at the end (enter 24,158, not 24,157.65).</p>';
     s.groups.forEach(g=>{h+=groupHTML(s,g,res,lock);});
     const rest=s.fields.filter(f=>!("grp" in f)); if(rest.length)h+='<div class="fields">'+rest.map(f=>fieldHTML(f,res,lock)).join("")+'</div>';}
-  else if(s.amort)h+=amortHTML(s,res,lock);
-  else{h+='<div class="fields">'; s.fields.forEach(f=>{h+=fieldHTML(f,res,lock);}); h+='</div>';}
+  else if(s.amort)h+='<p class="note" style="margin-top:0"><b>Round each amount to the nearest whole dollar</b> before you carry it to the next row.</p>'+amortHTML(s,res,lock);
+  else{h+='<p class="note" style="margin-top:0"><b>Enter whole dollars.</b> Round to the nearest dollar.</p><div class="fields">'; s.fields.forEach(f=>{h+=fieldHTML(f,res,lock);}); h+='</div>';}
   if(F.warn)h+='<div class="overall no"><b>Not submitted yet.</b> '+esc(F.warn)+' Only your first complete submission is scored.</div>';
   if(F.revealed)h+='<div class="overall shown"><b>Answers shown.</b> Work through each answer before moving on.</div>';
   else if(F.fb&&graded()){
