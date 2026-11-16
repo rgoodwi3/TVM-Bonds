@@ -603,7 +603,7 @@ const nearHalf=x=>Math.abs(x-Math.floor(x)-0.5)<0.02;
 const pctOf=v=>v>0&&v<1?v*100:v;
 const lc=s=>s.charAt(0).toLowerCase()+s.slice(1);
 
-// ---------- Chart of accounts (course chart of accounts; listed alphabetically) ----------
+// ---------- Chart of accounts (course chart of accounts; sorted by account number) ----------
 const ACCTS=[
   {id:"ap",no:2000,name:"Accounts Payable",normal:"C",g:"liab"},
   {id:"bp",no:2600,name:"Bonds Payable",normal:"C",g:"liab"},
@@ -615,7 +615,7 @@ const ACCTS=[
   {id:"np",no:2500,name:"Notes Payable",normal:"C",g:"liab"},
   {id:"prem",no:2620,name:"Premium on Bonds Payable",normal:"C",g:"liab"}
 ];
-const ORDER=ACCTS.slice().sort((x,y)=>x.name.localeCompare(y.name));
+const ORDER=ACCTS.slice().sort((x,y)=>x.no-y.no);
 const A=Object.fromEntries(ACCTS.map(a=>[a.id,a]));
 const GROUPS=[
   {key:"asset",label:"Assets",note:"normal debit balance"},
@@ -1285,7 +1285,7 @@ function radios(name,opts,val,lock,state,label,stack){
   return '<fieldset class="cg'+(state==="ok"?" grp-ok":state==="no"?" grp-no":"")+'"><legend class="sr">'+esc(label)+'</legend><div class="choices'+(stack?" stack":"")+'">'+
     opts.map(o=>'<label class="choice"><input type="radio" name="'+name+'" value="'+esc(o[0])+'"'+(val===o[0]?" checked":"")+(lock?" disabled":"")+'><span>'+esc(o[1])+'</span></label>').join("")+'</div></fieldset>';
 }
-function acctOptions(sel){return '<option value="">Choose an account…</option>'+ORDER.map(a=>'<option value="'+a.id+'"'+(sel===a.id?" selected":"")+'>'+esc(a.name)+'</option>').join("");}
+function acctOptions(sel){return '<option value="">Choose an account…</option>'+ORDER.map(a=>'<option value="'+a.id+'"'+(sel===a.id?" selected":"")+'>'+a.no+' '+esc(a.name)+'</option>').join("");}
 function controls(primary){
   let nav;
   if(graded())nav='<button class="btn small" data-act="exitGraded" title="Your graded attempt is saved to your account, and you can come back to it. The clock keeps running.">Exit to practice</button>';
