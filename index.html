@@ -863,7 +863,7 @@ function nbal(b,id){const t=b[id];return A[id].normal==="D"?t.d-t.c:t.c-t.d;}
 function bsVals(b){const bp=nbal(b,"bp"),disc=nbal(b,"disc"),prem=nbal(b,"prem");return {cash:nbal(b,"cash"),bp,disc,prem,cv:bp-disc+prem,ix:nbal(b,"ix")};}
 
 let G=null,STEPS=[],N=0,BOOKS=[],seed=0,I0=null;
-function buildSet(sd){
+function buildSet(sd){WORK=[];
   seed=sd; G=gen(sd); STEPS=G.steps; N=STEPS.length; I0=G.info;
   BOOKS=[]; const bk=emptyBook(); BOOKS.push(JSON.parse(JSON.stringify(bk)));
   for(let i=0;i<N;i++){postStep(bk,STEPS[i],i);BOOKS.push(JSON.parse(JSON.stringify(bk)));}
@@ -884,7 +884,7 @@ let VIEW=null; // graded mode: the submitted step being looked at (view only), o
 const VIEWS=["calc","bs","t","j"];
 function save(){try{
   if(MODE==="graded"&&GS)localStorage.setItem(GKEY,JSON.stringify({attempt:GS.id,course:GS.course}));
-  else if(G)localStorage.setItem(KEY,JSON.stringify({seed,k,recap,status,year:YEAR}));
+  else if(G)localStorage.setItem(KEY,JSON.stringify({seed,k,recap,status,year:YEAR,work:WORK}));
   if(!PENDING)localStorage.setItem(MKEY,MODE);
   const v={};VIEWS.forEach(x=>v[x]=$("v-"+x).checked);localStorage.setItem(KEY+".views",JSON.stringify(v));
   localStorage.setItem(KEY+".hide",$("hideIdle").checked?"1":"0");
@@ -904,11 +904,20 @@ function loadPractice(hs){
   try{st=JSON.parse(localStorage.getItem(KEY)||"null");}catch(e){}
   if(st&&st.year!==YEAR)st=null;
   if(hs&&(!st||st.seed!==hs)){buildSet(hs);fresh();return;}
-  if(st&&st.seed){try{buildSet(st.seed);k=Math.max(0,Math.min(N,st.k|0));recap=!!st.recap&&k>0&&STEPS[k-1].type==="entry";status=Array.isArray(st.status)&&st.status.length===N?st.status:new Array(N).fill(null);if(k<N)startForm();return;}catch(e){}}
+  if(st&&st.seed){try{buildSet(st.seed);WORK=workIn(st.work);k=Math.max(0,Math.min(N,st.k|0));recap=!!st.recap&&k>0&&STEPS[k-1].type==="entry";status=Array.isArray(st.status)&&st.status.length===N?st.status:new Array(N).fill(null);if(k<N)startForm();return;}catch(e){}}
   buildSet(randomSeed()); fresh();
 }
 function fresh(){k=0;recap=false;status=new Array(N).fill(null);startForm();}
-function startForm(){const s=STEPS[k];F={rows:s&&s.type==="entry"?(s.lines||new Array(s.lineCount).fill(0)).map(()=>({a:"",dr:"",cr:""})):[],vals:{},cpt:{},fb:null,tries:0,revealed:false,hint:false,warn:null};confirmReset=false;}
+function startForm0(){const s=STEPS[k];F={rows:s&&s.type==="entry"?(s.lines||new Array(s.lineCount).fill(0)).map(()=>({a:"",dr:"",cr:""})):[],vals:{},cpt:{},fb:null,tries:0,revealed:false,hint:false,warn:null};confirmReset=false;}
+// Practice keeps each step's work (what was entered, checked or shown) so moving between steps, reloading
+// or leaving the page doesn't lose it. WORK[i] is step i's form; it's saved with the practice set.
+let WORK=[];
+function workIn(w){return Array.isArray(w)?w.map(x=>x&&typeof x==="object"&&Array.isArray(x.rows)?Object.assign({vals:{}},x,{warn:null}):null):[];}
+function startForm(){if(MODE!=="graded"&&WORK[k]){F=WORK[k];F.warn=null;confirmReset=false;return;}startForm0();if(MODE!=="graded")WORK[k]=F;}
+// Save practice work as it's typed, and when the page is left.
+document.addEventListener("input",()=>{if(MODE!=="graded")setTimeout(save,0);});
+document.addEventListener("change",()=>{if(MODE!=="graded")setTimeout(save,0);});
+window.addEventListener("pagehide",()=>{save();});
 
 // ---------- graded mode (server) ----------
 // The class and lab come from the course page link: ?course=<id>&lab=tvm-bonds
@@ -1213,8 +1222,7 @@ $("timeline").addEventListener("click",e=>{const t=e.target.closest(".tick");if(
 function goTo(i){
   if(graded()){reviewStep(i);return;}
   i=Math.max(0,Math.min(N-1,i));
-  if(i<k){for(let j=i;j<N;j++)status[j]=null;}
-  else for(let j=k;j<i;j++)if(!status[j])status[j]="skipped";
+  if(i>k)for(let j=k;j<i;j++)if(!status[j])status[j]="skipped";
   k=i; recap=false; startForm(); render(true); scrollEntry();
 }
 
